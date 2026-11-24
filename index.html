@@ -2,7 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d2330">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="아트렘 재고">
 <title>아트렘 재고관리</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -66,7 +69,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .type button.on.in{background:var(--ok);color:#fff;border-color:var(--ok)}
 .type button.on.us{background:var(--use);color:#fff;border-color:var(--use)}
 #typeBtns{grid-template-columns:repeat(3,1fr)}
-.type button.on.ck{background:var(--pri);color:#fff;border-color:var(--pri)}
+.type button.on.chk{background:var(--pri);color:#fff;border-color:var(--pri)}
 .up{color:#16a34a;font-weight:700;font-size:12px;margin-left:6px}
 .dn{color:#dc2626;font-weight:700;font-size:12px;margin-left:6px}
 .hint{font-size:12px;color:var(--sub);margin-top:6px}
@@ -91,6 +94,60 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .fx input{text-align:right}
 .fxl b{font-size:15px}
 .hide{display:none!important}
+#logType{grid-template-columns:repeat(3,1fr)}
+.type button.on.adj{background:var(--pri);color:#fff;border-color:var(--pri)}
+.k.adj{background:var(--pri)}
+.edq{cursor:pointer}
+.edq .pen{font-size:12px;color:var(--sub);margin-left:6px;font-weight:400}
+.eds{display:flex;gap:4px;justify-content:flex-end;align-items:center}
+.eds input{width:72px;min-height:38px;padding:6px;text-align:right;font-size:17px;font-weight:600}
+.edrow td{background:#f0f6ff}
+/* ===== 모바일 최적화 ===== */
+body{font-size:16px;line-height:1.45}
+header{padding:12px 16px calc(10px) 16px;padding-top:calc(12px + env(safe-area-inset-top))}
+header h1{font-size:19px}
+header p{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .me{font-size:13px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+header .me button{font-size:13px;padding:6px 10px;margin-left:2px}
+.sync{font-size:13px}
+nav{justify-content:center}
+nav button{font-size:15px;padding:14px 0;max-width:150px}
+nav button.on{font-weight:700}
+main{padding:12px 12px calc(90px + env(safe-area-inset-bottom))}
+.card{padding:16px;border-radius:14px}
+.card h2{font-size:17px}
+.sum{gap:8px}
+.sum div{padding:12px 6px}
+.sum b{font-size:24px}
+.sum span{font-size:13px}
+.chip{font-size:15px;padding:9px 16px;min-height:40px}
+.chip.sm{font-size:14px;padding:7px 12px;min-height:36px}
+table{font-size:16px}
+th{font-size:13px}
+th,td{padding:10px 6px}
+td.n{font-size:17px;font-weight:600}
+.loc b{font-size:17px}
+.tag{font-size:12px;padding:3px 8px}
+.sub2{font-size:13px}
+.hint{font-size:13px;line-height:1.5}
+.err{font-size:14px}
+label{font-size:13px}
+.grp{font-size:13px}
+.ck{font-size:15px}
+.type button{font-size:16px;padding:13px 0;min-height:50px}
+.fx{grid-template-columns:1fr 104px;padding:11px 0}
+.fxl b{font-size:16px}
+.fx input{font-size:18px;font-weight:600}
+.log{font-size:16px;padding:12px 0}
+.log small{font-size:13px}
+.log .by{font-size:13px}
+.k{font-size:12px;padding:2px 7px}
+.up,.dn{font-size:14px}
+.badge{font-size:12px}
+.srow{padding:10px 0}
+.btn{font-size:17px;padding:15px}
+#toast{font-size:15px;bottom:calc(24px + env(safe-area-inset-bottom));max-width:90vw;text-align:center}
+@media (max-width:360px){nav button{font-size:14px}.sum b{font-size:20px}.type button{font-size:15px}}
 </style>
 </head>
 <body>
@@ -144,6 +201,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div class="row" id="locFilter" style="margin-top:10px"></div>
       <select id="locSel" style="margin-top:8px"></select>
     </div>
+    <p class="hint" style="margin:0 4px 8px">재고 숫자를 누르면 바로 고칠 수 있어요 · 고친 내용은 기록 탭 '수정'에 이름과 함께 남아요</p>
     <div id="stockList"></div>
     <div class="card">
       <h2>제품별 전체 재고</h2>
@@ -158,7 +216,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div class="type" id="typeBtns">
         <button data-t="in" class="in on">입고 (납품)</button>
         <button data-t="us" class="us">사용</button>
-        <button data-t="ck" class="ck">재고 확인</button>
+        <button data-t="ck" class="chk">재고 확인</button>
       </div>
       <p class="hint" id="typeHint"></p>
       <label>분류</label>
@@ -197,6 +255,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     <div class="type" id="logType" style="margin-bottom:12px">
       <button data-lt="in" class="in on">입고</button>
       <button data-lt="us" class="us">사용</button>
+      <button data-lt="adj" class="adj">수정</button>
     </div>
     <div class="card"><h2 id="logTitle"></h2><div id="logList"></div></div>
   </section>
@@ -396,7 +455,7 @@ const synced={cfg:'',tx:{}};   // tx: 기록 1건 = 문서 1개 (여러 직원�
 const DEL=new Set();           // 이 기기에서 지운 기록
 function setSync(s){
   const el=$('#sync');
-  const m={local:['서버 연결 대기 중','bad'],loading:['서버 연결 중…',''],ok:['☁ 서버에 저장됨 · 모든 직원이 같은 데이터를 봐요','ok'],saving:['저장 중…',''],err:['⚠ 서버 저장 실패 · 이 기기에는 저장됨, 잠시 후 자동 재시도','bad'],slow:['연결이 느려요 · 이 기기 데이터를 보여주는 중','bad']}[s]||['',''];
+  const m={local:['',''],loading:['서버 연결 중…',''],ok:['☁ 서버에 저장됨 · 모든 직원이 같은 데이터를 봐요','ok'],saving:['저장 중…',''],err:['⚠ 서버 저장 실패 · 이 기기에는 저장됨, 잠시 후 자동 재시도','bad'],slow:['연결이 느려요 · 이 기기 데이터를 보여주는 중','bad']}[s]||['',''];
   el.textContent=m[0];el.className='sync '+m[1];
 }
 function cfgJson(){return JSON.stringify({locs:S.locs,prods:S.prods})}
@@ -458,6 +517,7 @@ function calc(){
   S.tx.forEach(x=>{
     if(x.t==='in')add(x.to,x.p,'',x.q);
     if(x.t==='us')add(x.from,x.p,'',-x.q);
+    if(x.t==='adj')add(x.to,x.p,'',x.q);
   });
   return st;
 }
@@ -465,7 +525,8 @@ function lastChange(){
   const lc={};
   sortTx(S.tx).forEach(x=>{const k=x.p+'|';
     if(x.t==='in'){lc[x.to]=lc[x.to]||{};lc[x.to][k]={d:x.q,at:x.at}}
-    if(x.t==='us'){lc[x.from]=lc[x.from]||{};lc[x.from][k]={d:-x.q,at:x.at}}});
+    if(x.t==='us'){lc[x.from]=lc[x.from]||{};lc[x.from][k]={d:-x.q,at:x.at}}
+    if(x.t==='adj'){lc[x.to]=lc[x.to]||{};lc[x.to][k]={d:x.q,at:x.at}}});
   return lc;
 }
 
@@ -497,7 +558,9 @@ function renderStock(){
     const tot=rows.reduce((s,r)=>s+r.v,0);
     const mu=S.tx.filter(x=>x.t==='us'&&x.from===l.id&&monthOf(x.at)===cm&&(!pc||prodOf(x.p).cat===pc)).reduce((s,x)=>s+x.q,0);
     html+=`<div class="card"><div class="loc"><span><b>${esc(l.name)}</b> ${locTags(l)}</span><span class="tag">재고 ${tot} · 이번 달 사용 ${mu}</span></div>`+
-      (rows.length?`<table><tr><th>제품</th><th class="n">재고</th></tr>${rows.map(r=>{const p=prodOf(r.p);return `<tr><td>${esc(p.name||'(삭제된 제품)')}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}</td><td class="n"${r.v?'':' style="color:var(--sub)"'}>${r.v}${r.c?(r.c.d>0?`<span class="up">+${r.c.d}</span>`:`<span class="dn">-${-r.c.d}</span>`):''}</td></tr>`}).join('')}</table>`:`<div class="empty">재고 없음</div>`)+`</div>`;
+      (rows.length?`<table><tr><th>제품</th><th class="n">재고</th></tr>${rows.map(r=>{const p=prodOf(r.p),key=l.id+'|'+r.p;
+        if(EDS===key)return `<tr class="edrow"><td>${esc(p.name||'(삭제된 제품)')}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}<div class="sub2">현재 ${r.v}개 → 고칠 개수 입력</div></td><td class="n"><div class="eds"><input id="edsIn" type="number" min="0" inputmode="numeric" value="${r.v}"><button class="chip sm on" data-edsv="${key}">저장</button><button class="chip sm" data-edcc="1">취소</button></div></td></tr>`;
+        return `<tr><td>${esc(p.name||'(삭제된 제품)')}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}</td><td class="n edq" data-eds="${key}"${r.v?'':' style="color:var(--sub)"'}>${r.v}${r.c?(r.c.d>0?`<span class="up">+${r.c.d}</span>`:`<span class="dn">-${-r.c.d}</span>`):''}<span class="pen">✎</span></td></tr>`}).join('')}</table>`:`<div class="empty">재고 없음</div>`)+`</div>`;
   });
   $('#stockList').innerHTML=html||`<div class="card empty">${qs?'검색 결과가 없습니다':'재고가 있는 병원이 없어요 · 입력 탭에서 입고를 기록하세요'}</div>`;
   const pt={},pcat=catF==='pfa'?'bs':catF==='ep'?'jc':'';
@@ -506,6 +569,22 @@ function renderStock(){
   $('#prodTotal').innerHTML=pr.length?`<table><tr><th>제품</th><th class="n">재고 합계</th></tr>${pr.map(p=>`<tr><td>${esc(p.name)}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}</td><td class="n"><b>${pt[p.id]}</b></td></tr>`).join('')}</table>`:'<div class="empty">재고 없음</div>';
 }
 $('#q').addEventListener('input',renderStock);
+/* 재고 바로 수정: 차이를 '수정' 기록으로 남김 (사용량·입고에는 포함 안 됨) */
+let EDS=null;
+$('#stockList').addEventListener('click',e=>{
+  const ed=e.target.closest('[data-eds]'),sv=e.target.closest('[data-edsv]');
+  if(ed){EDS=ed.dataset.eds;renderStock();const i=$('#edsIn');if(i){i.focus();i.select()}return}
+  if(e.target.closest('[data-edcc]')){EDS=null;renderStock();return}
+  if(sv){
+    const v=$('#edsIn').value;if(v===''||isNaN(+v)||+v<0)return toast('0 이상의 숫자를 넣어 주세요');
+    const n=Math.floor(+v),[loc,p]=sv.dataset.edsv.split('|'),have=(calc()[loc]||{})[p+'|']||0,d=n-have;
+    EDS=null;
+    if(!d){renderStock();return toast('변동 없음')}
+    S.tx.push({id:Date.now()*1000+Math.floor(Math.random()*900),t:'adj',to:loc,p,lot:'',q:d,at:new Date(todayStr()+'T12:00:00').toISOString(),m:`재고 수정 ${have}→${n}`,by:ME.uid,byName:myName()});
+    persist();renderAll();toast(`${locName(loc)} · ${prodOf(p).name} ${have}→${n}개로 수정했어요`);
+  }
+});
+$('#stockList').addEventListener('keydown',e=>{if(e.target.id==='edsIn'){if(e.key==='Enter'){const b=$('[data-edsv]');if(b)b.click()}if(e.key==='Escape'){EDS=null;renderStock()}}});
 $('#locFilter').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(b){catF=b.dataset.c;locF='all';renderStock()}});
 $('#locSel').addEventListener('change',e=>{locF=e.target.value;renderStock()});
 
@@ -642,16 +721,16 @@ $('#useCat').addEventListener('click',e=>{const b=e.target.closest('[data-uc]');
 /* ───── 기록 ───── */
 let LT='in';
 function renderLog(){
-  const name={in:'입고',us:'사용'},cnt={in:0,us:0};
+  const name={in:'입고',us:'사용',adj:'수정'},cnt={in:0,us:0,adj:0};
   S.tx.forEach(x=>{if(cnt[x.t]!==undefined)cnt[x.t]++});
   document.querySelectorAll('#logType button').forEach(b=>{b.classList.toggle('on',b.dataset.lt===LT);b.textContent=`${name[b.dataset.lt]} ${cnt[b.dataset.lt]}`});
   $('#logTitle').textContent=`${name[LT]} 기록`;
   const list=S.tx.filter(x=>x.t===LT).sort((a,b)=>b.at.localeCompare(a.at)||b.id-a.id);
   $('#logList').innerHTML=list.length?list.map(x=>{
     const d=new Date(x.at),ds=`${d.getMonth()+1}/${d.getDate()}`;
-    const where=LT==='in'?x.to:x.from;
+    const where=LT==='us'?x.from:x.to;
     const can=ADMIN||!x.by||x.by===(ME&&ME.uid);
-    return `<div class="log"><div><span class="k ${LT}">${name[LT]}</span>${esc(prodName(x.p))}<small>${esc(locName(where))}${x.m?' · '+esc(x.m):''}</small><small class="by">작성: ${esc(x.byName||'-')}</small></div><div style="text-align:right"><b class="${LT==='us'?'dn':'up'}" style="font-size:15px;margin:0">${LT==='us'?'-':'+'}${x.q}</b><small>${ds}</small>${can?`<button class="chip sm" data-del="${x.id}" style="margin-top:4px">삭제</button>`:''}</div></div>`;
+    return `<div class="log"><div><span class="k ${LT}">${name[LT]}</span>${esc(prodName(x.p))}<small>${esc(locName(where))}${x.m?' · '+esc(x.m):''}</small><small class="by">작성: ${esc(x.byName||'-')}</small></div><div style="text-align:right"><b class="${LT==='us'||(LT==='adj'&&x.q<0)?'dn':'up'}" style="font-size:15px;margin:0">${LT==='us'?'-'+x.q:LT==='adj'?(x.q>0?'+':'')+x.q:'+'+x.q}</b><small>${ds}</small>${can?`<button class="chip sm" data-del="${x.id}" style="margin-top:4px">삭제</button>`:''}</div></div>`;
   }).join(''):'<div class="empty">기록이 없어요</div>';
 }
 $('#logType').addEventListener('click',e=>{const b=e.target.closest('[data-lt]');if(b){LT=b.dataset.lt;renderLog()}});
@@ -727,7 +806,7 @@ $('#imp').addEventListener('click',e=>{
   const b=e.target;let d;
   try{d=JSON.parse($('#bk').value)}catch(x){return toast('백업 내용이 올바르지 않아요')}
   if(!d||!Array.isArray(d.locs)||!Array.isArray(d.prods)||!Array.isArray(d.tx))return toast('백업 내용이 올바르지 않아요');
-  armDel(b,()=>{const ntx=d.tx.filter(x=>x.t==='in'||x.t==='us');markRemoved(ntx);S={locs:d.locs.filter(l=>l.kind!=='co'),prods:d.prods,tx:ntx};R=[];persist();renderAll();toast('가져왔어요')});
+  armDel(b,()=>{const ntx=d.tx.filter(x=>x.t==='in'||x.t==='us'||x.t==='adj');markRemoved(ntx);S={locs:d.locs.filter(l=>l.kind!=='co'),prods:d.prods,tx:ntx};R=[];persist();renderAll();toast('가져왔어요')});
 });
 $('#reset').addEventListener('click',e=>{
   if(!ADMIN)return;
