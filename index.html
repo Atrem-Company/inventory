@@ -322,10 +322,12 @@ const KEY='atrem-inventory-v4';
 const NOTES={'EP CABLE':'매월 말 출고분 파악 후 5:5 결제'};
 const SET2=['Farawave 31mm','Farawave 35mm','Sheath','wire','electrodes'];
 const SET3=[...SET2,'Stablepoint(SP)','Orion','Backpatch'];
+const SET_MF=[...SET2,'Mifi','Orion','Backpatch'];                    // 천안단국대·삼육대
+const SET_SM=[...SET2,'Stablepoint(SP)','Mifi','Orion','Backpatch'];  // 서울성모
 function sample(){
   let n=0;const P=(cat,grp,names)=>names.map(x=>({id:'p'+(++n),name:x,cat,grp}));
   const prods=[
-    ...P('bs','',['Farawave 31mm','Farawave 35mm','Sheath','wire','Orion','Backpatch','electrodes','Stablepoint(SP)']),
+    ...P('bs','',['Farawave 31mm','Farawave 35mm','Sheath','wire','Orion','Backpatch','electrodes','Stablepoint(SP)','Mifi']),
     ...P('jc','FIX NOGAMI',['F13445HV-120R']),
     ...P('jc','SNAKE',['11556BI-100R']),
     ...P('jc','STEERABLE NOGAMI',['13445HV-R']),
@@ -340,8 +342,8 @@ function sample(){
   const H=(id,name,pfa,ep,items)=>({id,name,kind:'hp',pfa,ep,items:items||[]});
   return {
     locs:[
-      H('h1','충북대',1,1,ids(SET2)),H('h2','천안순천향',1,1,ids(SET2)),H('h3','천안단국대',1,1,ids(SET3)),
-      H('h4','삼육대',1,0,ids(SET3)),H('h5','명지고양',1,0,ids(SET2)),H('h6','서울성모',1,0,ids(SET3)),
+      H('h1','충북대',1,1,ids(SET2)),H('h2','천안순천향',1,1,ids(SET2)),H('h3','천안단국대',1,1,ids(SET_MF)),
+      H('h4','삼육대',1,0,ids(SET_MF)),H('h5','명지고양',1,0,ids(SET2)),H('h6','서울성모',1,0,ids(SET_SM)),
       H('h7','대전성모',0,1),H('h8','충남대',0,1),H('h9','세종충남대',0,1),H('h10','대전을지대',0,1),
       H('h11','건양대',0,1),H('h12','천안충무',0,1),H('h13','대전선',0,1),H('h14','유성선',0,1)],
     prods,
@@ -352,8 +354,22 @@ const sortTx=a=>[...a].sort((x,y)=>x.at.localeCompare(y.at)||x.id-y.id);
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.locs||!S.prods||!S.tx)S=sample();
-/* 제품명 변경: Mifi → Stablepoint(SP) (이미 저장된 데이터에도 적용) */
-function migrate(){let ch=false;S.prods.forEach(p=>{if(p.name==='Mifi'){p.name='Stablepoint(SP)';ch=true}});return ch}
+/* 제품 정리 (이미 저장된 데이터에도 한 번만 적용):
+   Mifi 제품이 없으면 Stablepoint(SP) 바로 뒤에 추가하고,
+   천안단국대·삼육대는 SP → Mifi, 서울성모는 SP + Mifi 로 품목을 맞춤 */
+function migrate(){
+  if(S.prods.some(p=>p.name==='Mifi'&&p.cat==='bs'))return false;
+  const sp=S.prods.find(p=>p.name==='Stablepoint(SP)'&&p.cat==='bs');
+  const mf={id:'p_mifi',name:'Mifi',cat:'bs',grp:''};
+  const i=sp?S.prods.indexOf(sp)+1:S.prods.filter(p=>p.cat==='bs').length;
+  S.prods.splice(i,0,mf);
+  S.locs.forEach(l=>{
+    const its=l.items||[];
+    if(l.pfa&&/단국|삼육/.test(l.name)){l.items=its.filter(x=>!sp||x!==sp.id);if(!l.items.includes(mf.id))l.items.push(mf.id)}
+    else if(l.pfa&&/서울성모/.test(l.name)){l.items=[...its];if(sp&&!l.items.includes(sp.id))l.items.push(sp.id);if(!l.items.includes(mf.id))l.items.push(mf.id)}
+  });
+  return true;
+}
 migrate();
 
 const $=s=>document.querySelector(s);
