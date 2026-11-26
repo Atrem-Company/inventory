@@ -98,7 +98,11 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .type button.on.adj{background:var(--pri);color:#fff;border-color:var(--pri)}
 .k.adj{background:var(--pri)}
 .edq{cursor:pointer}
-.edq .pen{font-size:12px;color:var(--sub);margin-left:6px;font-weight:400}
+.edq .pen{font-size:12px;color:var(--sub);font-weight:400}
+.pen{display:inline-block;width:20px;text-align:right}
+.cv,.hc{display:inline-block;min-width:44px;text-align:right}
+.cd,.hd{display:inline-block;min-width:52px;text-align:right}
+th .hc,th .hd{font-weight:500}
 .eds{display:flex;gap:4px;justify-content:flex-end;align-items:center}
 .eds input{width:72px;min-height:38px;padding:6px;text-align:right;font-size:17px;font-weight:600}
 .edrow td{background:#f0f6ff}
@@ -317,11 +321,11 @@ const ADMIN_EMAILS = ["atremkorea@gmail.com"];
 const KEY='atrem-inventory-v4';
 const NOTES={'EP CABLE':'매월 말 출고분 파악 후 5:5 결제'};
 const SET2=['Farawave 31mm','Farawave 35mm','Sheath','wire','electrodes'];
-const SET3=[...SET2,'Mifi','Orion','Backpatch'];
+const SET3=[...SET2,'Stablepoint(SP)','Orion','Backpatch'];
 function sample(){
   let n=0;const P=(cat,grp,names)=>names.map(x=>({id:'p'+(++n),name:x,cat,grp}));
   const prods=[
-    ...P('bs','',['Farawave 31mm','Farawave 35mm','Sheath','wire','Orion','Backpatch','electrodes','Mifi']),
+    ...P('bs','',['Farawave 31mm','Farawave 35mm','Sheath','wire','Orion','Backpatch','electrodes','Stablepoint(SP)']),
     ...P('jc','FIX NOGAMI',['F13445HV-120R']),
     ...P('jc','SNAKE',['11556BI-100R']),
     ...P('jc','STEERABLE NOGAMI',['13445HV-R']),
@@ -348,6 +352,9 @@ const sortTx=a=>[...a].sort((x,y)=>x.at.localeCompare(y.at)||x.id-y.id);
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.locs||!S.prods||!S.tx)S=sample();
+/* 제품명 변경: Mifi → Stablepoint(SP) (이미 저장된 데이터에도 적용) */
+function migrate(){let ch=false;S.prods.forEach(p=>{if(p.name==='Mifi'){p.name='Stablepoint(SP)';ch=true}});return ch}
+migrate();
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -483,6 +490,7 @@ function applyRemote(){
   const n={locs:cfg.locs,prods:cfg.prods,tx:sortTx(tx)};
   if(JSON.stringify(n)===JSON.stringify({locs:S.locs,prods:S.prods,tx:sortTx(S.tx)}))return;
   S=n;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  if(migrate())persist();
   renderStock();renderUsage();renderLog();renderSet();
   if(!$('#input').contains(document.activeElement))renderInput(R.some(r=>(+r.q||0)>0));
 }
@@ -493,7 +501,7 @@ function initSync(db){
   const check=()=>{
     if(ready||!defCfg||!defTx)return;
     ready=true;clearTimeout(timer);setSync('ok');
-    if(cfgAbsent){S.tx=[];push()}else applyRemote();   // 서버가 비어 있으면 기본 병원·제품 목록으로 시작
+    if(cfgAbsent){S.tx=[];push()}else{applyRemote();if(migrate()){persist();renderAll()}}   // 서버가 비어 있으면 기본 병원·제품 목록으로 시작
   };
   const fail=e=>{console.error(e);clearTimeout(timer);setSync('err');toast(errMsg(e))};
   try{
@@ -558,9 +566,9 @@ function renderStock(){
     const tot=rows.reduce((s,r)=>s+r.v,0);
     const mu=S.tx.filter(x=>x.t==='us'&&x.from===l.id&&monthOf(x.at)===cm&&(!pc||prodOf(x.p).cat===pc)).reduce((s,x)=>s+x.q,0);
     html+=`<div class="card"><div class="loc"><span><b>${esc(l.name)}</b> ${locTags(l)}</span><span class="tag">재고 ${tot} · 이번 달 사용 ${mu}</span></div>`+
-      (rows.length?`<table><tr><th>제품</th><th class="n">재고</th></tr>${rows.map(r=>{const p=prodOf(r.p),key=l.id+'|'+r.p;
+      (rows.length?`<table><tr><th>제품</th><th class="n"><span class="hc">현재고</span><span class="hd">사용량</span><span class="pen"></span></th></tr>${rows.map(r=>{const p=prodOf(r.p),key=l.id+'|'+r.p;
         if(EDS===key)return `<tr class="edrow"><td>${esc(p.name||'(삭제된 제품)')}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}<div class="sub2">현재 ${r.v}개 → 고칠 개수 입력</div></td><td class="n"><div class="eds"><input id="edsIn" type="number" min="0" inputmode="numeric" value="${r.v}"><button class="chip sm on" data-edsv="${key}">저장</button><button class="chip sm" data-edcc="1">취소</button></div></td></tr>`;
-        return `<tr><td>${esc(p.name||'(삭제된 제품)')}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}</td><td class="n edq" data-eds="${key}"${r.v?'':' style="color:var(--sub)"'}>${r.v}${r.c?(r.c.d>0?`<span class="up">+${r.c.d}</span>`:`<span class="dn">-${-r.c.d}</span>`):''}<span class="pen">✎</span></td></tr>`}).join('')}</table>`:`<div class="empty">재고 없음</div>`)+`</div>`;
+        return `<tr><td>${esc(p.name||'(삭제된 제품)')}${p.grp?`<div class="sub2">${esc(p.grp)}</div>`:''}</td><td class="n edq" data-eds="${key}"${r.v?'':' style="color:var(--sub)"'}><span class="cv">${r.v}</span><span class="cd">${r.c?(r.c.d>0?`<span class="up">+${r.c.d}</span>`:`<span class="dn">-${-r.c.d}</span>`):''}</span><span class="pen">✎</span></td></tr>`}).join('')}</table>`:`<div class="empty">재고 없음</div>`)+`</div>`;
   });
   $('#stockList').innerHTML=html||`<div class="card empty">${qs?'검색 결과가 없습니다':'재고가 있는 병원이 없어요 · 입력 탭에서 입고를 기록하세요'}</div>`;
   const pt={},pcat=catF==='pfa'?'bs':catF==='ep'?'jc':'';
