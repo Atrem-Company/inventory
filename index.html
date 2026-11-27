@@ -322,12 +322,12 @@ const KEY='atrem-inventory-v4';
 const NOTES={'EP CABLE':'매월 말 출고분 파악 후 5:5 결제'};
 const SET2=['Farawave 31mm','Farawave 35mm','Sheath','wire','electrodes'];
 const SET3=[...SET2,'Stablepoint(SP)','Orion','Backpatch'];
-const SET_MF=[...SET2,'Mifi','Orion','Backpatch'];                    // 천안단국대·삼육대
-const SET_SM=[...SET2,'Stablepoint(SP)','Mifi','Orion','Backpatch'];  // 서울성모
+const SET_MF=[...SET2,'MiFi','Orion','Backpatch'];                    // 천안단국대·삼육대
+const SET_SM=[...SET2,'Stablepoint(SP)','MiFi','Orion','Backpatch'];  // 서울성모
 function sample(){
   let n=0;const P=(cat,grp,names)=>names.map(x=>({id:'p'+(++n),name:x,cat,grp}));
   const prods=[
-    ...P('bs','',['Farawave 31mm','Farawave 35mm','Sheath','wire','Orion','Backpatch','electrodes','Stablepoint(SP)','Mifi']),
+    ...P('bs','',['Farawave 31mm','Farawave 35mm','Sheath','wire','Orion','Backpatch','electrodes','Stablepoint(SP)','MiFi']),
     ...P('jc','FIX NOGAMI',['F13445HV-120R']),
     ...P('jc','SNAKE',['11556BI-100R']),
     ...P('jc','STEERABLE NOGAMI',['13445HV-R']),
@@ -354,21 +354,34 @@ const sortTx=a=>[...a].sort((x,y)=>x.at.localeCompare(y.at)||x.id-y.id);
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.locs||!S.prods||!S.tx)S=sample();
-/* 제품 정리 (이미 저장된 데이터에도 한 번만 적용):
-   Mifi 제품이 없으면 Stablepoint(SP) 바로 뒤에 추가하고,
-   천안단국대·삼육대는 SP → Mifi, 서울성모는 SP + Mifi 로 품목을 맞춤 */
+/* 제품 정리 (서버 데이터를 불러올 때마다 확인, 바뀐 게 있을 때만 저장)
+   - MiFi와 Stablepoint(SP)는 서로 다른 제품
+   - MiFi는 id 'p_mifi'와 이름 'MiFi'로 고정
+     (이전 버전 화면이 이름이 정확히 Mi+fi(소문자 f)인 제품을 SP로 바꿔 버려서, 그 버전이 건드리지 않는 'MiFi' 표기를 씀)
+   - 천안단국대·삼육대: SP 없음, MiFi만. 이 두 병원의 SP 기록은 MiFi로 옮김
+   - 서울성모: SP + MiFi (처음 한 번만 품목에 추가) */
 function migrate(){
-  if(S.prods.some(p=>p.name==='Mifi'&&p.cat==='bs'))return false;
-  const sp=S.prods.find(p=>p.name==='Stablepoint(SP)'&&p.cat==='bs');
-  const mf={id:'p_mifi',name:'Mifi',cat:'bs',grp:''};
-  const i=sp?S.prods.indexOf(sp)+1:S.prods.filter(p=>p.cat==='bs').length;
-  S.prods.splice(i,0,mf);
+  let ch=false;
+  const seen=new Set(),np=[];
+  S.prods.forEach(p=>{if(seen.has(p.id)){ch=true;return}seen.add(p.id);np.push(p)});
+  if(ch)S.prods=np;
+  let mf=S.prods.find(p=>p.id==='p_mifi')||S.prods.find(p=>p.cat==='bs'&&/^mifi$/i.test(p.name));
+  const sp=S.prods.find(p=>p.cat==='bs'&&p.name==='Stablepoint(SP)'&&p!==mf);
+  let created=false;
+  if(!mf){mf={id:'p_mifi',name:'MiFi',cat:'bs',grp:''};const i=sp?S.prods.indexOf(sp)+1:S.prods.filter(p=>p.cat==='bs').length;S.prods.splice(i,0,mf);ch=true;created=true}
+  if(mf.name!=='MiFi'||mf.cat!=='bs'){mf.name='MiFi';mf.cat='bs';mf.grp='';ch=true}
   S.locs.forEach(l=>{
+    if(!l.pfa)return;
     const its=l.items||[];
-    if(l.pfa&&/단국|삼육/.test(l.name)){l.items=its.filter(x=>!sp||x!==sp.id);if(!l.items.includes(mf.id))l.items.push(mf.id)}
-    else if(l.pfa&&/서울성모/.test(l.name)){l.items=[...its];if(sp&&!l.items.includes(sp.id))l.items.push(sp.id);if(!l.items.includes(mf.id))l.items.push(mf.id)}
+    if(/단국|삼육/.test(l.name)){
+      const n=its.filter(x=>!sp||x!==sp.id);if(!n.includes(mf.id))n.push(mf.id);
+      if(JSON.stringify(n)!==JSON.stringify(its)){l.items=n;ch=true}
+      if(sp)S.tx.forEach(x=>{if((x.to===l.id||x.from===l.id)&&x.p===sp.id){x.p=mf.id;ch=true}});
+    }else if(created&&/서울성모/.test(l.name)){
+      const n=[...its];if(sp&&!n.includes(sp.id))n.push(sp.id);if(!n.includes(mf.id))n.push(mf.id);l.items=n;ch=true;
+    }
   });
-  return true;
+  return ch;
 }
 migrate();
 
